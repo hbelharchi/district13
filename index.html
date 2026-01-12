@@ -32554,10 +32554,88 @@ function toggleStats() {
             map_b3cb9ad9e081810cd4872bd9152db256.addControl( geo_json_604f76e9a0c4a636bf871db17037c527searchControl );
 
    // ===== GEOLOCALISATION EN TEMPS REEL =====
-var userMarker;
-var userCircle;
 
-function startTracking();
-    
+let _followUser = false;
+let _marker = null;
+let _accuracyCircle = null;
+
+function startLiveTracking() {
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser');
+    return;
+  }
+
+  let firstLocate = true;
+
+  function onSuccess(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    const acc = position.coords.accuracy || 0;
+
+    if (!_marker) {
+      _marker = L.marker([lat, lon]).addTo(window._liveMap);
+      _accuracyCircle = L.circle([lat, lon], {radius: acc, color:'#136AEC', fillColor:'#136AEC', fillOpacity:0.15}).addTo(window._liveMap);
+    } else {
+      _marker.setLatLng([lat, lon]);
+      _accuracyCircle.setLatLng([lat, lon]).setRadius(acc);
+    }
+
+    if (firstLocate) {
+      window._liveMap.flyTo([lat, lon], 16, {animate: true, duration: 0.8});
+      firstLocate = false;
+    } else if (_followUser) {
+      window._liveMap.panTo([lat, lon], {animate: true});
+    }
+  }
+
+  function onError(err) {
+    console.warn('Geolocation error:', err);
+  }
+
+  navigator.geolocation.watchPosition(onSuccess, onError, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 10000
+  });
+}
+
+// ---------------- FOLLOW BUTTON ----------------
+function addFollowButton(map) {
+  const control = L.control({position: 'topleft'});
+  control.onAdd = function() {
+    const c = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    c.style.background = 'white';
+    c.style.cursor = 'pointer';
+    c.innerHTML = '<a href="#" id="followBtn" style="display:block;padding:6px 8px;text-decoration:none;">🚶 Unfollow</a>';
+    c.onclick = function() {
+      _followUser = !_followUser;
+      const btn = document.getElementById('followBtn');
+      btn.textContent = _followUser ? "📍 Follow" : "🚶 Unfollow";
+      btn.style.background = _followUser ? "#c8f7c5" : "#f0f0f0";
+    };
+    return c;
+  };
+  control.addTo(map);
+}
+
+// ---------------- INIT ----------------
+window.addEventListener('load', function() {
+  let m = null;
+  for (const key in window) {
+    if (window[key] && window[key] instanceof L.Map) {
+      m = window[key];
+      break;
+    }
+  }
+  if (m) {
+    window._liveMap = m;
+    addFollowButton(m);
+    startLiveTracking();
+    console.log("✅ Live tracking ready");
+  } else {
+    console.warn("⚠️ No Leaflet map found.");
+  }
+});
 </script>
+
 </html>
