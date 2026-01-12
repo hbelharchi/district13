@@ -32589,6 +32589,47 @@ map_b3cb9ad9e081810cd4872bd9152db256.on('locationerror', function (e) {
 
 // Lancer automatiquement
 startTracking();
-     
+ // ===== GEOLOCALISATION AVEC ZOOM CONTROLE =====
+var userMarker = null;
+var userCircle = null;
+
+map_18c49500006b66843903466ff05d5de8.locate({
+    watch: true,
+    enableHighAccuracy: true,
+    maximumAge: 1000
+});
+
+map_18c49500006b66843903466ff05d5de8.on('locationfound', function (e) {
+    var latlng = e.latlng;
+    var accuracy = e.accuracy;
+
+    // ZOOM intelligent (comme tes searchControl)
+    var zoomLevel = 16;
+    map_18c49500006b66843903466ff05d5de8.flyTo(latlng, zoomLevel, {
+        animate: true,
+        duration: 0.8
+    });
+
+    if (!userMarker) {
+        userMarker = L.marker(latlng).addTo(map_18c49500006b66843903466ff05d5de8)
+            .bindPopup("📍 Position actuelle");
+
+        userCircle = L.circle(latlng, {
+            radius: accuracy,
+            color: '#136AEC',
+            fillColor: '#136AEC',
+            fillOpacity: 0.15
+        }).addTo(map_18c49500006b66843903466ff05d5de8);
+    } else {
+        userMarker.setLatLng(latlng);
+        userCircle.setLatLng(latlng);
+        userCircle.setRadius(accuracy);
+    }
+});
+
+map_18c49500006b66843903466ff05d5de8.on('locationerror', function (e) {
+    alert("Erreur GPS : " + e.message);
+});
+    
 </script>
 </html>
